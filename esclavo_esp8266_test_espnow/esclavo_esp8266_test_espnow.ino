@@ -42,7 +42,7 @@ int id_pcb = 121;                   //ID de MCU
 
 
 String success;                     //Varible para saber que el mensaje se ha entregado
-uint8_t broadcastAddress1[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };  //Direccion MAC donde queremos mandar los datos
+uint8_t broadcastAddress1[] = { 0x34, 0xB4, 0x72, 0x4E, 0x2A, 0x84 };  //Direccion MAC donde queremos mandar los datos{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }
 
 //34:B4:72:4E:32:8C - esp32c3_2 
 //34:B4:72:4E:2A:84 - esp32c3_1
@@ -73,11 +73,11 @@ struct_message datos_master;  //creamos estructura para RECIBIR los datos del ma
 void OnDataSent(uint8_t* mac_addr, uint8_t sendStatus) {
     
     if (sendStatus == 0) {
-        Serial.print("Envio a maestro desde ");
+        /*Serial.print("Envio a maestro desde ");
         Serial.print(datos_slave.id);
         Serial.print(" ");
         Serial.print(millis());
-        Serial.println(" OK");
+        Serial.println(" OK");*/
     }
     else {
         Serial.println("Delivery fail to Master");
@@ -86,7 +86,7 @@ void OnDataSent(uint8_t* mac_addr, uint8_t sendStatus) {
 // ESP-NOW Callback when data is received
 void OnDataRecv(uint8_t* mac, uint8_t *incomingData, uint8_t len) {
     memcpy(&datos_master, incomingData, sizeof(datos_master));
-    Serial.print("Bytes on SLAVE: ");
+    Serial.print("Bytes on MASTER: ");
     Serial.println(len);
  
     Serial.print(datos_master.id);
@@ -101,11 +101,11 @@ void OnDataRecv(uint8_t* mac, uint8_t *incomingData, uint8_t len) {
     Serial.print(" - cnt: ");
     Serial.print(datos_master.cnt);
     Serial.print(" - actualiza_slave: ");
-    Serial.println(datos_master.upt_slave);
+    Serial.print(datos_master.upt_slave);
     Serial.print(" - actualiza_master: ");
-    Serial.println(datos_master.upt_master);
+    Serial.print(datos_master.upt_master);
     Serial.print(" - Tension master: ");
-    Serial.println(datos_master.vsense);
+    Serial.print(datos_master.vsense);
     Serial.print(" Pausado master: ");
     Serial.println(datos_master.pau);
 }
@@ -118,6 +118,9 @@ void setup()
     Serial.begin(115200);
     /*Inicializamos a WIFI*/
     WiFi.mode(WIFI_STA);
+
+    // Register peer
+    esp_now_add_peer(broadcastAddress1, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
 
     /*******************Init ESP-NOW***********************/
     if (esp_now_init() != 0) {
@@ -132,8 +135,7 @@ void setup()
     // get the status of Trasnmitted packet
     esp_now_register_send_cb(OnDataSent);
     
-    // Register peer
-    esp_now_add_peer(broadcastAddress1, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
+
 
     // Registramos funcion callback que sera llamada cuandop recibimos datos
     esp_now_register_recv_cb(OnDataRecv);

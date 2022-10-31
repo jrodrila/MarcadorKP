@@ -49,7 +49,7 @@
 int id_pcb = 111;                   //ID de MCU
 
 String success;                     //Varible para saber que el mensaje se ha entregado
-uint8_t broadcastAddress1[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };  //Direccion MAC donde queremos mandar los datos { 0xC8, 0xC9, 0xA3, 0x60, 0xFA, 0x67 }
+uint8_t broadcastAddress1[] = { 0xC8, 0xC9, 0xA3, 0x60, 0xFA, 0x67 };  //Direccion MAC donde queremos mandar los datos { 0xC8, 0xC9, 0xA3, 0x60, 0xFA, 0x67 }
 
 //34:B4:72:4E:32:8C - esp32c3_1
 //34:B4:72:4E:2A:84 - esp32c3_2
@@ -84,12 +84,12 @@ void OnDataSent(const uint8_t* mac_addr, esp_now_send_status_t status) {
 
 
 /*ESP - NOW Callback when data is received*/
-void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
+void OnDataRecv(const uint8_t* mac, uint8_t* incomingData, int len) {
     memcpy(&datos_slave, incomingData, sizeof(datos_slave));
     
     Serial.print("Bytes on SLAVE: ");
     Serial.println(len);
-    Serial.print(datos_slave.id);
+    /*Serial.print(datos_slave.id);
     Serial.print("--> rst: ");
     Serial.print(datos_slave.rst);
     Serial.print(" - aut: ");
@@ -101,13 +101,13 @@ void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
     Serial.print(" - cnt: ");
     Serial.print(datos_slave.cnt);
     Serial.print(" - actualiza_slave: ");
-    Serial.println(datos_slave.upt_slave);
+    Serial.print(datos_slave.upt_slave);
     Serial.print(" - actualiza_master: ");
-    Serial.println(datos_slave.upt_master);
+    Serial.print(datos_slave.upt_master);
     Serial.print(" - Tension master: ");
-    Serial.println(datos_slave.vsense);
+    Serial.print(datos_slave.vsense);
     Serial.print(" Pausado master: ");
-    Serial.println(datos_slave.pau);
+    Serial.println(datos_slave.pau);*/
 }
 
 void setup()
@@ -167,7 +167,7 @@ void loop() {
     }
     else {
         Serial.println("Envio a esclavo NOK");
-    }
+    }  
 
     /*FIN Enviamos info ESP-NOW*/
 
