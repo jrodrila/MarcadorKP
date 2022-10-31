@@ -15,6 +15,7 @@
 #define _VSARDUINO_H_
 #define __ESP8266_esp8266__ 1
 #define __ESP8266_ESP8266__ 1
+#define _VMDEBUG 1
 #define __ets__ 1
 #define ICACHE_FLASH 1
 #define _GNU_SOURCE 1

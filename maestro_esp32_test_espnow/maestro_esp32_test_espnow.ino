@@ -8,7 +8,12 @@
 */
 
 // Librerias
+#ifdef ESP32
 #include <WiFi.h>
+#else
+#include <ESP8266WiFi.h>
+#endif
+
 #include <esp_now.h>
 #include <Arduino.h>
 #include <iostream>
@@ -44,7 +49,7 @@
 int id_pcb = 111;                   //ID de MCU
 
 String success;                     //Varible para saber que el mensaje se ha entregado
-uint8_t broadcastAddress1[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };  //Direccion MAC donde queremos mandar los datos
+uint8_t broadcastAddress1[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };  //Direccion MAC donde queremos mandar los datos { 0xC8, 0xC9, 0xA3, 0x60, 0xFA, 0x67 }
 
 //34:B4:72:4E:32:8C - esp32c3_1
 //34:B4:72:4E:2A:84 - esp32c3_2
@@ -73,14 +78,8 @@ esp_now_peer_info_t peerInfo;//No funciona con espnow.h
 //FUNCIONES
 /*ESP - NOW Callback when data is sent*/
 void OnDataSent(const uint8_t* mac_addr, esp_now_send_status_t status) {
-    //Serial.print("\r\nLast:\t");
-    //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery MS OK" : "Fallo Entrega en MAESTRO");
-    if (status == 0) {
-        success = "Envio a Esclavo OK :)";
-    }
-    else {
-        success = "Envio a Esclavo NOK :(";
-    }
+    Serial.print("\r\nLast:\t");
+    Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery SL OK" : "Fallo Entrega en ESCLAVO");
 }
 
 
@@ -146,7 +145,7 @@ void loop() {
 
     /*Enviamos info ESP-NOW*/
     //Actualizar datos de envio
-    delay(500);
+    delay(1500);
 
     datos_master.id = id_pcb;
     datos_master.cnt = 0;
