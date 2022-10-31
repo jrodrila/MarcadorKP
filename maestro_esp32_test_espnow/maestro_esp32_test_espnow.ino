@@ -42,11 +42,6 @@
 
 //Variables ESP-NOW
 int id_pcb = 111;                   //ID de MCU
-bool resetear = 0;                  //Para mandar un reset
-bool auto_setting = 0;              //Para cambiar parámetro de autoreset
-int tiempo_setting = 0;             //Para cambiar el parámetro de tiempo
-int aviso_setting = 0;              //Para cambiar el parámetro de aviso
-int contador_master = 0;            //Para guardar el valor del contador del maestro
 
 String success;                     //Varible para saber que el mensaje se ha entregado
 uint8_t broadcastAddress1[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };  //Direccion MAC donde queremos mandar los datos
@@ -90,8 +85,9 @@ void OnDataSent(const uint8_t* mac_addr, esp_now_send_status_t status) {
 
 
 /*ESP - NOW Callback when data is received*/
-void OnDataRecv(uint8_t* mac, uint8_t* incomingData, uint8_t len) {
+void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
     memcpy(&datos_slave, incomingData, sizeof(datos_slave));
+    
     Serial.print("Bytes on SLAVE: ");
     Serial.println(len);
     Serial.print(datos_slave.id);
@@ -114,8 +110,6 @@ void OnDataRecv(uint8_t* mac, uint8_t* incomingData, uint8_t len) {
     Serial.print(" Pausado master: ");
     Serial.println(datos_slave.pau);
 }
-
-
 
 void setup()
 {
@@ -141,7 +135,7 @@ void setup()
         Serial.println("Fallo añadiendo peer");
         return;
     }
-    // Registramos funcion callback que sera llamada cuandop recibimos datos
+    // Registramos funcion callback que sera llamada cuando recibimos datos
     esp_now_register_recv_cb(OnDataRecv);
     /*******************FIN Init ESP-NOW********************/
 
@@ -150,10 +144,9 @@ void setup()
 /*####################### BUCLE PRINCIPAL ######################*/
 void loop() {
 
-
-
     /*Enviamos info ESP-NOW*/
     //Actualizar datos de envio
+    delay(500);
 
     datos_master.id = id_pcb;
     datos_master.cnt = 0;
@@ -167,15 +160,17 @@ void loop() {
     // Enviamos mensaje ESP-NOW
     esp_err_t result = esp_now_send(broadcastAddress1, (uint8_t*)&datos_master, sizeof(datos_master));
     if (result == ESP_OK) {
-        Serial.println("Envio a maestro OK");
+        Serial.print("Envio a esclavo desde ");
+        Serial.print(datos_master.id);
+        Serial.print(" ");
+        Serial.print(millis());
+        Serial.println(" OK");
     }
     else {
-        Serial.println("Envio a maestro NOK");
+        Serial.println("Envio a esclavo NOK");
     }
 
     /*FIN Enviamos info ESP-NOW*/
-
-
 
 
 }
