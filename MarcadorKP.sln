@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "maestro_esp32_test_espnow",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "esclavo_esp8266_test_espnow", "esclavo_esp8266_test_espnow\esclavo_esp8266_test_espnow.vcxproj", "{D9D62C9E-6EE0-454E-A0C5-E1D8DAD06744}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "maestro_esp8266_test_espnow", "maestro_esp8266_test_espnow\maestro_esp8266_test_espnow.vcxproj", "{1E2691E0-0EEB-479E-8474-F3618914965C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -39,6 +41,10 @@ Global
 		{D9D62C9E-6EE0-454E-A0C5-E1D8DAD06744}.Debug|x86.Build.0 = Debug|Win32
 		{D9D62C9E-6EE0-454E-A0C5-E1D8DAD06744}.Release|x86.ActiveCfg = Release|Win32
 		{D9D62C9E-6EE0-454E-A0C5-E1D8DAD06744}.Release|x86.Build.0 = Release|Win32
+		{1E2691E0-0EEB-479E-8474-F3618914965C}.Debug|x86.ActiveCfg = Debug|Win32
+		{1E2691E0-0EEB-479E-8474-F3618914965C}.Debug|x86.Build.0 = Debug|Win32
+		{1E2691E0-0EEB-479E-8474-F3618914965C}.Release|x86.ActiveCfg = Release|Win32
+		{1E2691E0-0EEB-479E-8474-F3618914965C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

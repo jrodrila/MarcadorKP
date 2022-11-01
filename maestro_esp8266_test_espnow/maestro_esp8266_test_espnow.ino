@@ -38,11 +38,11 @@
 
 
 //Variables ESP-NOW
-int id_pcb = 121;                   //ID de MCU
+int id_pcb = 122;                   //ID de MCU
 
 
 String success;                     //Varible para saber que el mensaje se ha entregado
-uint8_t broadcastAddress1[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };  //Direccion MAC donde queremos mandar los datos{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } / { 0xC8, 0xC9, 0xA3, 0x60, 0x93, 0xD0 }
+uint8_t broadcastAddress1[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };  //Direccion MAC donde queremos mandar los datos{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } / { 0xC8, 0xC9, 0xA3, 0x60, 0xFA, 0x67 }
 
 //34:B4:72:4E:32:8C - esp32c3_2 
 //34:B4:72:4E:2A:84 - esp32c3_1
@@ -64,15 +64,15 @@ typedef struct struct_message {
     bool pau;
 } struct_message;
 
-struct_message datos_slave;   //creamos estructura para MANDAR datos del esclavo
-struct_message datos_master;  //creamos estructura para RECIBIR los datos del maestro
+struct_message datos_slave;   //creamos estructura para RECIBIR datos del esclavo
+struct_message datos_master;  //creamos estructura para MANDAR los datos del maestro
 
 
 
 //FUNCIONES
 // ESP-NOW Callback when data is sent
 void OnDataSent(uint8_t* mac_addr, uint8_t sendStatus) {
-    
+
     if (sendStatus == 0) {
         /*Serial.print("Envio a maestro desde ");
         Serial.print(datos_slave.id);
@@ -81,35 +81,36 @@ void OnDataSent(uint8_t* mac_addr, uint8_t sendStatus) {
         Serial.println(" OK");*/
     }
     else {
-        Serial.println("Delivery fail to Master");
+        Serial.println("Delivery fail to Slave");
     }
 }
 // ESP-NOW Callback when data is received
-void OnDataRecv(uint8_t* mac, uint8_t *incomingData, uint8_t len) {
-    memcpy(&datos_master, incomingData, sizeof(datos_master));
-    Serial.print("Bytes on MASTER: ");
+void OnDataRecv(uint8_t* mac, uint8_t* incomingData, uint8_t len) {
+    memcpy(&datos_slave, incomingData, sizeof(datos_slave));
+    Serial.print("Bytes on SLAVE: ");
     Serial.print(len);
     Serial.print(" <-ID-> ");
-    Serial.println(datos_master.id);
-    /*Serial.print(datos_master.id);
+    Serial.println(datos_slave.id);
+    
+    /*Serial.print(datos_slave.id);
     Serial.print("--> rst: ");
-    Serial.print(datos_master.rst);
+    Serial.print(datos_slave.rst);
     Serial.print(" - aut: ");
-    Serial.print(datos_master.aut);
+    Serial.print(datos_slave.aut);
     Serial.print(" - tiempo: ");
-    Serial.print(datos_master.set_tiempo);
+    Serial.print(datos_slave.set_tiempo);
     Serial.print(" - aviso: ");
-    Serial.print(datos_master.set_aviso);
+    Serial.print(datos_slave.set_aviso);
     Serial.print(" - cnt: ");
-    Serial.print(datos_master.cnt);
+    Serial.print(datos_slave.cnt);
     Serial.print(" - actualiza_slave: ");
-    Serial.print(datos_master.upt_slave);
+    Serial.print(datos_slave.upt_slave);
     Serial.print(" - actualiza_master: ");
-    Serial.print(datos_master.upt_master);
+    Serial.print(datos_slave.upt_master);
     Serial.print(" - Tension master: ");
-    Serial.print(datos_master.vsense);
+    Serial.print(datos_slave.vsense);
     Serial.print(" Pausado master: ");
-    Serial.println(datos_master.pau);*/
+    Serial.println(datos_slave.pau);*/
 }
 
 
@@ -141,7 +142,7 @@ void setup()
     // Once ESPNow is successfully Init, we will register for Send CB to
     // get the status of Trasnmitted packet
     esp_now_register_send_cb(OnDataSent);
-    
+
 
 
     // Registramos funcion callback que sera llamada cuandop recibimos datos
@@ -156,24 +157,25 @@ void loop() {
 
     delay(1000);
 
-        /*Enviamos info ESP-NOW*/
-        //Actualizar datos de envio
-        datos_slave.id = id_pcb;
-        datos_slave.cnt = 10;
-        datos_slave.rst = false;
-        datos_slave.aut = false;
-        datos_slave.set_tiempo = 30;
-        datos_slave.set_aviso = 10;
-        datos_slave.upt_master = false; //Activamos actualizacion del master si esta activo
-        datos_slave.pau = false;
-        // Enviamos mensaje ESP-NOW
+    /*Enviamos info ESP-NOW*/
+    //Actualizar datos de envio
+    datos_master.id = id_pcb;
+    datos_master.cnt = 10;
+    datos_master.rst = false;
+    datos_master.aut = false;
+    datos_master.set_tiempo = 30;
+    datos_master.set_aviso = 10;
+    datos_master.upt_master = false; //Activamos actualizacion del master si esta activo
+    datos_master.pau = false;
+    // Enviamos mensaje ESP-NOW
 
-        // Send message via ESP-NOW
-        esp_now_send(broadcastAddress1, (uint8_t*)&datos_slave, sizeof(datos_slave));
+    // Send message via ESP-NOW
+    esp_now_send(broadcastAddress1, (uint8_t*)&datos_master, sizeof(datos_master));
 
-        /*FIN Enviamos info ESP-NOW*/
+    /*FIN Enviamos info ESP-NOW*/
 
 
 }
+
 
 

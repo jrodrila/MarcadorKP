@@ -49,12 +49,13 @@
 int id_pcb = 111;                   //ID de MCU
 
 String success;                     //Varible para saber que el mensaje se ha entregado
-uint8_t broadcastAddress1[] = { 0xC8, 0xC9, 0xA3, 0x60, 0xFA, 0x67 };  //Direccion MAC donde queremos mandar los datos { 0xC8, 0xC9, 0xA3, 0x60, 0xFA, 0x67 }
+uint8_t broadcastAddress1[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };  //Direccion MAC donde queremos mandar los datos { 0xC8, 0xC9, 0xA3, 0x60, 0xFA, 0x67 }
 
 //34:B4:72:4E:32:8C - esp32c3_1
 //34:B4:72:4E:2A:84 - esp32c3_2
 //30:C6:F7:29:01:28 - esp32-wroom-32d
-//C8:C9:A3:60:FA:67 - lolin D1 mini
+//C8:C9:A3:60:FA:67 - lolin D1 mini_1
+//C8:C9:A3:60:93:D0 - lolin D1 mini_2
 
 //Estructura para enviar datos
 typedef struct struct_message {
@@ -84,7 +85,7 @@ void OnDataSent(const uint8_t* mac_addr, esp_now_send_status_t status) {
 
 
 /*ESP - NOW Callback when data is received*/
-void OnDataRecv(const uint8_t* mac, uint8_t* incomingData, int len) {
+void OnDataRecv(const uint8_t* mac,const uint8_t* incomingData, int len) {
     memcpy(&datos_slave, incomingData, sizeof(datos_slave));
     
     Serial.print("Bytes on SLAVE: ");
