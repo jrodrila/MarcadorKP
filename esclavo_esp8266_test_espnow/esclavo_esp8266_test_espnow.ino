@@ -8,12 +8,8 @@
 */
 
 // Librerias
-#ifdef ESP32
-#include <WiFi.h>
-#else
-#include <ESP8266WiFi.h>
-#endif
 
+#include <ESP8266WiFi.h>
 #include <espnow.h>
 #include <Arduino.h>
 #include <iostream>
@@ -39,10 +35,11 @@
 
 //Variables ESP-NOW
 int id_pcb = 121;                   //ID de MCU
+int contador = 0;
 
 
 String success;                     //Varible para saber que el mensaje se ha entregado
-uint8_t broadcastAddress1[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };  //Direccion MAC donde queremos mandar los datos{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } / { 0xC8, 0xC9, 0xA3, 0x60, 0x93, 0xD0 }
+uint8_t broadcastAddress1[] = { 0x34, 0xB4, 0x72, 0x4E, 0x2A, 0x84 };  //Direccion MAC donde queremos mandar los datos{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } / { 0xC8, 0xC9, 0xA3, 0x60, 0x93, 0xD0 }
 
 //34:B4:72:4E:32:8C - esp32c3_2 
 //34:B4:72:4E:2A:84 - esp32c3_1
@@ -90,7 +87,9 @@ void OnDataRecv(uint8_t* mac, uint8_t *incomingData, uint8_t len) {
     Serial.print("Bytes on MASTER: ");
     Serial.print(len);
     Serial.print(" <-ID-> ");
-    Serial.println(datos_master.id);
+    Serial.print(datos_master.id);
+    Serial.print(" - cnt: ");
+    Serial.println(datos_master.cnt);
     /*Serial.print(datos_master.id);
     Serial.print("--> rst: ");
     Serial.print(datos_master.rst);
@@ -130,8 +129,10 @@ void setup()
         return;
     }
 
+
+
     // Register peer
-    esp_now_add_peer(broadcastAddress1, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
+    esp_now_add_peer(broadcastAddress1, ESP_NOW_ROLE_COMBO, 0, NULL, 0);
 
 
 
@@ -155,11 +156,11 @@ void loop() {
 
 
     delay(1000);
-
+    contador++;
         /*Enviamos info ESP-NOW*/
         //Actualizar datos de envio
         datos_slave.id = id_pcb;
-        datos_slave.cnt = 10;
+        datos_slave.cnt = contador;
         datos_slave.rst = false;
         datos_slave.aut = false;
         datos_slave.set_tiempo = 30;

@@ -23,13 +23,13 @@
 
 // Definiciones pines LOLIN D1 mini ESP8266EX
 #define BOT_CH          0    //IO0
-#define BOT_UP          2    //IO2
+#define BOT_UP          2    //IO2//LED Interno
 #define I2C_SDA         4    //IO4 / I2C_SDA 
 #define I2C_SCL         5    //IO5 / I2C_SCL 
 #define LIBRE_PIN_10    A0   //A0
 #define LIBRE_PIN_12    12   //IO12 / MISO
 #define LIBRE_PIN_14    14   //IO14 / SCK
-#define LIBRE_PIN_15    15   //IO15
+#define LIBRE_PIN_15          15   //IO15
 #define LIBRE_PIN_16    16   //IO16
 #define LIBRE_PIN_13    13   //IO13 / MOSI
 #define U0RX            RX   // RX
@@ -127,7 +127,7 @@ Adafruit_SSD1306 oled(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);  //Pantalla OLED 
 
 //FUNCIONES
 // ESP-NOW Callback when data is sent
-void OnDataSent(const uint8_t* mac_addr, esp_now_send_status_t status) {
+void OnDataSent(uint8_t* mac_addr, uint8_t status) {
     //Serial.print("\r\nLast:\t");
     //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery MS OK" : "Fallo Entrega en MAESTRO");
     if (status == 0) {
@@ -294,7 +294,7 @@ void IRAM_ATTR ISR_button1()  //Resetear el contador#####NO FUNCIONA PRINTLN (re
     actualizar = 1;
     //power_saving = 0; //desactivamos power saving
 }
-/*
+
 void IRAM_ATTR ISR_BOT_CH()  //Boton cambio de funcion #####NO FUNCIONA PRINTLN (resetea el micro)
 {
     tiempo_pausa_on = millis();
@@ -311,7 +311,7 @@ void IRAM_ATTR ISR_BOT_CH()  //Boton cambio de funcion #####NO FUNCIONA PRINTLN 
         //power_saving = 0; //desactivamos power saving
     }
 }
-*/
+
 void IRAM_ATTR ISR_BOT_CH_RS()  //Boton cambio de funcion #####NO FUNCIONA PRINTLN (resetea el micro)
 {
     tiempo_pausa_off = millis();
@@ -362,7 +362,7 @@ void setup()
 
     /*I2C Inicializacion*/
     Wire.begin(I2C_SDA, I2C_SCL);
-    delay(100);//500
+    delay(500);//500
 
 
     /*Pines botones*/
@@ -378,7 +378,7 @@ void setup()
 
 
     /*******************Init ESP-NOW***********************/
-    if (esp_now_init() != ESP_OK) {
+    if (esp_now_init() != ERR_OK) {
         Serial.println("Error initializando ESP-NOW");
         return;//Esto estaba comentado
     }
@@ -386,21 +386,20 @@ void setup()
     // get the status of Trasnmitted packet
     esp_now_register_send_cb(OnDataSent);
     // Preparamos info para registrar esclavo
-    memcpy(peerInfo.peer_addr, broadcastAddress1, 6);
-    peerInfo.channel = 0;
-    peerInfo.encrypt = false;
-    // Añadimos esclavo
-    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-        Serial.println("Fallo añadiendo peer");
-        return;
-    }
+    esp_now_add_peer(broadcastAddress1, ESP_NOW_ROLE_COMBO, 0, NULL, 0);
+
+
+    // Set ESP-NOW Role
+    esp_now_set_self_role(ESP_NOW_ROLE_COMBO);//Exclusivo espnow.h
+
+
     // Registramos funcion callback que sera llamada cuandop recibimos datos
     esp_now_register_recv_cb(OnDataRecv);
     /*******************FIN Init ESP-NOW********************/
 
     /*Inicializamos interrupciones*/
     
-    //attachInterrupt(BOT_CH, ISR_BOT_CH, FALLING);//Boton para cambio de funcion
+    attachInterrupt(BOT_CH, ISR_BOT_CH, FALLING);//Boton para cambio de funcion
     //attachInterrupt(BOT_CH, ISR_BOT_CH_RS, RISING);//Interrupcion para detectar la caida del boton, y pausar el timer
     attachInterrupt(BOT_UP, ISR_BOT_UP, FALLING);////Boton para resetear el tiempo / cambio de opcion
     //Serial.print(bootCount);
@@ -480,8 +479,8 @@ void loop() {
         datos_slave.upt_master = param_upt_local_esp; //Activamos actualizacion del master si esta activo
         datos_slave.pau = pausar_esp;
         // Enviamos mensaje ESP-NOW
-        esp_err_t result = esp_now_send(broadcastAddress1, (uint8_t*)&datos_slave, sizeof(datos_slave));
-        if (result == ESP_OK) {
+      
+        if (esp_now_send(broadcastAddress1, (uint8_t*)&datos_slave, sizeof(datos_slave)) == ERR_OK) {
             Serial.println("Envio a maestro OK");
             param_upt_local_esp = 0;
         }

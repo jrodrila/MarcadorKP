@@ -15,13 +15,14 @@
 #define _VSARDUINO_H_
 #define __ESP8266_esp8266__ 1
 #define __ESP8266_ESP8266__ 1
+#define _VMDEBUG 1
 #define __ets__ 1
 #define ICACHE_FLASH 1
 #define _GNU_SOURCE 1
 #define MMU_IRAM_SIZE 0x8000
 #define MMU_ICACHE_SIZE 0x8000
 #define NONOSDK22x_190703 1
-#define F_CPU 80000000L
+#define F_CPU 160000000L
 #define LWIP_OPEN_SRC 1
 #define TCP_MSS 536
 #define LWIP_FEATURES 1

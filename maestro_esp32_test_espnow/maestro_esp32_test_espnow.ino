@@ -8,12 +8,8 @@
 */
 
 // Librerias
-#ifdef ESP32
-#include <WiFi.h>
-#else
-#include <ESP8266WiFi.h>
-#endif
 
+#include <WiFi.h>
 #include <esp_now.h>
 #include <Arduino.h>
 #include <iostream>
@@ -47,9 +43,11 @@
 
 //Variables ESP-NOW
 int id_pcb = 111;                   //ID de MCU
+int contador = 0;
+
 
 String success;                     //Varible para saber que el mensaje se ha entregado
-uint8_t broadcastAddress1[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };  //Direccion MAC donde queremos mandar los datos { 0xC8, 0xC9, 0xA3, 0x60, 0xFA, 0x67 }
+uint8_t broadcastAddress1[] = { 0xC8, 0xC9, 0xA3, 0x60, 0x93, 0xD0 };  //Direccion MAC donde queremos mandar los datos { 0xC8, 0xC9, 0xA3, 0x60, 0xFA, 0x67 }
 
 //34:B4:72:4E:32:8C - esp32c3_1
 //34:B4:72:4E:2A:84 - esp32c3_2
@@ -89,7 +87,11 @@ void OnDataRecv(const uint8_t* mac,const uint8_t* incomingData, int len) {
     memcpy(&datos_slave, incomingData, sizeof(datos_slave));
     
     Serial.print("Bytes on SLAVE: ");
-    Serial.println(len);
+    Serial.print(len);
+    Serial.print(" <-ID-> ");
+    Serial.print(datos_slave.id);
+    Serial.print(" - cnt: ");
+    Serial.println(datos_slave.cnt);
     /*Serial.print(datos_slave.id);
     Serial.print("--> rst: ");
     Serial.print(datos_slave.rst);
@@ -123,12 +125,16 @@ void setup()
         Serial.println("Error initializando ESP-NOW");
         return;//Esto estaba comentado
     }
+
+
     // Once ESPNow is successfully Init, we will register for Send CB to
     // get the status of Trasnmitted packet
     esp_now_register_send_cb(OnDataSent);
     // Preparamos info para registrar esclavo
     memcpy(peerInfo.peer_addr, broadcastAddress1, 6);
     peerInfo.channel = 0;
+
+
     peerInfo.encrypt = false;
     // Añadimos esclavo
     if (esp_now_add_peer(&peerInfo) != ESP_OK) {
@@ -146,10 +152,10 @@ void loop() {
 
     /*Enviamos info ESP-NOW*/
     //Actualizar datos de envio
-    delay(1500);
-
+    delay(500);
+    contador++;
     datos_master.id = id_pcb;
-    datos_master.cnt = 0;
+    datos_master.cnt = contador;
     datos_master.rst = false;
     datos_master.aut = false;
     datos_master.set_tiempo = 20;
