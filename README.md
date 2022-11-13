@@ -1,2 +1,2 @@
 # MarcadorKP
-Desarroolado con Visual Studio 2022 y Visual Micro
+Desarrollado con Visual Studio 2022 y Visual Micro
