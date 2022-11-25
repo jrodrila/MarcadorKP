@@ -129,6 +129,7 @@ void OnDataSent(const uint8_t* mac_addr, esp_now_send_status_t status) {
     else {
         success = "Envio a Maestro NOK :(";
     }
+    Serial.println(success);
 }
 // ESP-NOW Callback when data is received
 void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
@@ -171,6 +172,7 @@ void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
 //Funcion para actualizar el OLED
 void actualizarOLED(int menu)
 {
+    wakeDisplay(&oled);
     oled.clearDisplay();  // clear display
     if (menu == 0) {
         if (param_upt_local == 1) {
@@ -312,7 +314,7 @@ void IRAM_ATTR ISR_BOT_CH()  //Boton cambio de funcion #####NO FUNCIONA PRINTLN 
             numScreen = 0;
         }
         tiempo_previo_boton = millis();
-        //power_saving = 0; //desactivamos power saving
+        power_saving = 0; //desactivamos power saving
     }
 }
 
@@ -333,7 +335,7 @@ void IRAM_ATTR ISR_BOT_UP()  //Boton cambio de opcion/Resetear el contador#####N
         estadoBOT_UP = 1;
         resetear = 1;
         tiempo_previo_boton = millis();
-        //power_saving = 0; //desactivamos power saving
+        power_saving = 0; //desactivamos power saving
     }
 
 }
@@ -345,7 +347,7 @@ void IRAM_ATTR ISR_BOT_RS()  //Boton cambio de opcion/Resetear el contador#####N
         estadoBOT_UP = 1;
         resetear = 1;
         tiempo_previo_boton = millis();
-        //power_saving = 0; //desactivamos power saving
+        power_saving = 0; //desactivamos power saving
     }
 }
 void setup()
@@ -354,6 +356,9 @@ void setup()
     Serial.begin(115200);
     /*Definimos frecuencia de trabajo del micro*/
     setCpuFrequencyMhz(cpu_freq_mhz);
+    frecuencia = getCpuFrequencyMhz();  // In MHz
+    Serial.print(frecuencia);
+    Serial.println(" MHz");
 
     /*Inicializar libreria Preferences*/
     preferences.begin("my-app", false); // my-app es el nombre del namespace --> preferences.clear(); para limpiar todo 
@@ -379,7 +384,7 @@ void setup()
 
     /*I2C Inicializacion*/
     Wire.begin(I2C_SDA, I2C_SCL);
-    delay(500);
+    delay(200);
 
 
     /*Pines botones*/
@@ -419,71 +424,50 @@ void setup()
     attachInterrupt(SWITCH_PCB, ISR_button1, FALLING);  //Boton para resetear el tiempo
     attachInterrupt(BOT_CH, ISR_BOT_CH, FALLING);//Boton para cambio de funcion
     attachInterrupt(BOT_RS, ISR_BOT_RS, FALLING);//Boton para cambio de funcion
-    //attachInterrupt(BOT_CH, ISR_BOT_CH_RS, RISING);//Interrupcion para detectar la caida del boton, y pausar el timer
     attachInterrupt(BOT_UP, ISR_BOT_UP, FALLING);////Boton para resetear el tiempo / cambio de opcion
-    //Serial.print(bootCount);
-    //Serial.println(" inicios");
+
    
     /*********************Inicializamos OLED*****************/
     if (!oled.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
         Serial.println(F("failed to start SSD1306 OLED"));
         while (1);
     }
+       
     oled.clearDisplay();          // clear display
     oled.setTextSize(2);         // set text size
     oled.setTextColor(WHITE);    // set text color
-
-     //if (bootCount == 0) {
-        oled.clearDisplay();          // clear display
-        oled.setTextSize(2);         // set text size
-        oled.setTextColor(WHITE);    // set text color
-        oled.setCursor(0, 0);         // set position to display
-        oled.println(" Marcador ");   // set text
-        oled.setCursor(0, 17);        // set position to display
-        oled.println(" v0.2 SL");       // set text
-        oled.display();               // display on OLED
-        delay(1000); 
-     //   }
-
-    sleepDisplay(&oled);
-    delay(2500);
-    wakeDisplay(&oled);
-    delay(500);
-
+    oled.setCursor(0, 0);         // set position to display
+    oled.println(" Marcador ");   // set text
+    oled.setCursor(0, 17);        // set position to display
+    oled.println(" v0.2 SL");       // set text
+    oled.display();               // display on OLED
+    delay(500); 
+    
     /*********************FIN Inicializamos OLED*****************/
-    /* DEBUGGER */
-    frecuencia = getCpuFrequencyMhz();  // In MHz
-    Serial.print(frecuencia);
-    Serial.println(" MHz");
-
-   
-
+    tiempo_previo_boton = millis();
 }
 
 /*####################### BUCLE PRINCIPAL ######################*/
 void loop() {
     
-    //if (millis() - tiempo_previo >= power_saving_time) {
-     //   oled.clearDisplay();
-     //   oled.display(); 
-     //   esp_sleep_enable_ext0_wakeup(GPIO_NUM_02, 1);
-
-    //}
- 
+    if (millis() - tiempo_previo_boton >= power_saving_time) {
+        sleepDisplay(&oled);
+        power_saving = 1;
+        Serial.print("Power saving: ");
+        Serial.println(power_saving);
+    }
+    
     if (actualizar == 1)
     {
+
         decenas = (contador - (contador % 10)) / 10;
         unidades = contador - decenas * 10;
-        //if (millis() - tiempo_actual > power_saving_time) {
-        //    power_saving = 1;
-        //    oled.clearDisplay();
-        //    oled.display();               
-        //}
-
-        //if (power_saving == 0) {
+        if (power_saving == 0) {
             actualizarOLED(numScreen);
+            Serial.print("Power saving: ");
+            Serial.println(power_saving);
+        }
 
-        //}
 
         if (pausar == true) {
               pausar_esp = !pausar_esp;
@@ -516,7 +500,7 @@ void loop() {
         actualizar = 0;
         /*FIN Enviamos info ESP-NOW*/
 
-        //eval_RGB();
+       
        
        // esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); // ESP32 wakes up every 0.8 seconds
         //Serial.println("Going to light-sleep now");
