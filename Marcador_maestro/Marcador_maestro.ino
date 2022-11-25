@@ -156,14 +156,14 @@ void IRAM_ATTR ISR_BOT_CH() //Boton cambio de funcion #####NO FUNCIONA PRINTLN (
 {
     if (millis() - tiempo_previo_boton > timeThreshold)
     {
-        pausar_esp = !pausar_esp; //Temporal
-        /*estadoBOT_CH = 1;
+        //pausar_esp = !pausar_esp; //Temporal
+        estadoBOT_CH = 1;
         if (numScreen < 4) {
             numScreen++;
         }
         else {
             numScreen = 0;
-        }*/
+        }
         tiempo_previo_boton = millis();
     }
 

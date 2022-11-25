@@ -4,18 +4,16 @@
  Created:	    19/03/2022 13:01:25
  Author:	    Juan Carlos Rodriguez Lara
  Mail:          jrodrila@gmail.com
- Version:       0.1 - Slave
+ Version:       0.2 - Slave
 */
 
 // Librerias
-#include <dummy.h>
 #include <Wire.h>  //Libreria para que funcione el I2C de la pantalla OLED
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <WiFi.h>
 #include <esp_now.h>
 #include <Arduino.h>
-#include <iostream>
 #include <Preferences.h>
 #include <esp_sleep.h>
 
@@ -23,27 +21,16 @@
 #define SCREEN_WIDTH 128  // OLED width,  in pixels
 #define SCREEN_HEIGHT 32  // OLED height, in pixels
 
-// Definiciones pines ESP32C3
-#define LIBRE_PIN_0     0    //(IO0 / ADC1_CH0 / XTAL_32K_N)
-#define BOT_CH          1    //(IO1 / ADC1_CH1 / XTAL_32K_N)
-#define BOT_UP          2    //(IO2 / ADC1_CH2 / FSPIQ)
-#define PIN_RED         3    // ADC1_CH3 / (IO03 / ADC1_CH3)
-#define PIN_GREEN       4    // ADC1_CH4 / (IO04 / ADC1_CH4 / FSPIHD / MTMS)
-#define PIN_BLUE        5    // ADC2_CH0 / (IO05 / ADC2_CH0 / FSPIWP / MTDI)
-#define I2C_SDA         6    //I2C_SDA (IO6 / FSPICLK / MTCK)  pin 7 de J3 _0x3C
-#define I2C_SCL         7    //I2C_SCL (IO7 / FSPID / MTDO)    pn 8 de J3
-#define LIBRE_PIN_8     8    //(IO8)
-#define BUTTON_1        9    // IO09 / Boton integrado en PCB
-#define LIBRE_PIN_10    10   //(IO10 / FSPICSO)
-#define LIBRE_PIN_12    12   //(IO12 / SPIHD)
-#define LIBRE_PIN_14    14   //(IO14 / SPICS0)
-#define LIBRE_PIN_15    15   //(IO15 / SPICLK)
-#define LIBRE_PIN_16    16   //(IO16 / SPID)
-#define LIBRE_PIN_17    17   //(IO17 / SPIQ)
-#define LED_PIN_1       18   // IO18 Led Naranja Integrado
-#define LED_PIN_2       19   // IO19 Led Blanco Integrado
-#define U0RX            20   // RX0 (IO20 / RX0)
-#define U0TX            21   // TX0 (IO21 / TX0)
+
+// Definiciones pines ESP32 S2 mini
+#define SWITCH_PCB      0    // Boton integrado en PCB
+#define BOT_CH          9    //
+#define BOT_UP          5    //
+#define BOT_RS          3    //
+#define I2C_SDA         33    //I2C_SDA   _0x3C
+#define I2C_SCL         35    //I2C_SCL   
+#define LED_PIN         15   // Led Integrado
+
 
 // Definiciones
 #define MAX_DISPLAY     61          // Valor máximo por defecto
@@ -60,13 +47,13 @@ unsigned long tiempo_previo_boton = 0;
 unsigned long tiempo_previo = 0;
 unsigned long tiempo_pausa_on = 0;
 unsigned long tiempo_pausa_off = 0;
-unsigned long tiempo_pausa = 2000; //Tiempo manteniendo el botoin de cambio, para qeu se pause el marcador
+unsigned long tiempo_pausa = 2000; //Tiempo manteniendo el boton de cambio, para que se pause el marcador
 unsigned long power_saving_time = TIME_TO_SLEEP * mS_TO_S_FACTOR ; //tiempo en ms en el cual activamos power saving 
 bool power_saving = 0;  //power saving activado
 
 //Variables microprocesador
 uint32_t frecuencia = 0;
-uint32_t cpu_freq_mhz = 160;     //Menos de 80 MHz no va bien la WIFI ni el puerto serie
+uint32_t cpu_freq_mhz = 80;     //Menos de 80 MHz no va bien la WIFI ni el puerto serie
 
 
 
@@ -134,8 +121,8 @@ Adafruit_SSD1306 oled(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);  //Pantalla OLED 
 //FUNCIONES
 // ESP-NOW Callback when data is sent
 void OnDataSent(const uint8_t* mac_addr, esp_now_send_status_t status) {
-    //Serial.print("\r\nLast:\t");
-    //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery MS OK" : "Fallo Entrega en MAESTRO");
+    Serial.print("\r\nLast:\t");
+    Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery MS OK" : "Fallo Entrega en MAESTRO");
     if (status == 0) {
         success = "Envio a Maestro OK :)";
     }
@@ -292,39 +279,26 @@ void actualizarOLED(int menu)
     oled.display();  // display on OLED
 }
 
-//Función RGB
-void eval_RGB() {
-    if (contador < 1) {
-        analogWrite(PIN_RED, 255);
-        analogWrite(PIN_GREEN, 0);
-        analogWrite(PIN_BLUE, 0);
-    }
-    if (contador >= 1 && contador <= 5) {
-        analogWrite(PIN_RED, 255);
-        analogWrite(PIN_GREEN, 128);
-        analogWrite(PIN_BLUE, 0);
-    }
-    if (contador > 5 && contador <= contador_max) {
-        analogWrite(PIN_RED, 0);
-        analogWrite(PIN_GREEN, 255);
-        analogWrite(PIN_BLUE, 0);
-    }
+//Funcion para apagar el OLED
+void sleepDisplay(Adafruit_SSD1306* display) {
+    display->ssd1306_command(SSD1306_DISPLAYOFF);
 }
-
-
-
+//Funcion para encender el OLED
+void wakeDisplay(Adafruit_SSD1306* display) {
+    display->ssd1306_command(SSD1306_DISPLAYON);
+}
 
 //Interrupciones
 void IRAM_ATTR ISR_button1()  //Resetear el contador#####NO FUNCIONA PRINTLN (resetea el micro)
 {
     estadoLED = !estadoLED;
-    digitalWrite(LED_PIN_1, estadoLED);  // turn on LED
+    digitalWrite(LED_PIN, estadoLED);  // turn on LED
     //Serial.println("Estadoboton: ON " + String(estadoLED));
     resetear = 1;
     actualizar = 1;
     //power_saving = 0; //desactivamos power saving
 }
-/*
+
 void IRAM_ATTR ISR_BOT_CH()  //Boton cambio de funcion #####NO FUNCIONA PRINTLN (resetea el micro)
 {
     tiempo_pausa_on = millis();
@@ -341,7 +315,7 @@ void IRAM_ATTR ISR_BOT_CH()  //Boton cambio de funcion #####NO FUNCIONA PRINTLN 
         //power_saving = 0; //desactivamos power saving
     }
 }
-*/
+
 void IRAM_ATTR ISR_BOT_CH_RS()  //Boton cambio de funcion #####NO FUNCIONA PRINTLN (resetea el micro)
 {
     tiempo_pausa_off = millis();
@@ -361,9 +335,19 @@ void IRAM_ATTR ISR_BOT_UP()  //Boton cambio de opcion/Resetear el contador#####N
         tiempo_previo_boton = millis();
         //power_saving = 0; //desactivamos power saving
     }
+
 }
 
-
+void IRAM_ATTR ISR_BOT_RS()  //Boton cambio de opcion/Resetear el contador#####NO FUNCIONA PRINTLN (resetea el micro)
+{
+    if (millis() - tiempo_previo_boton > timeThreshold) {
+        actualizar = 1;
+        estadoBOT_UP = 1;
+        resetear = 1;
+        tiempo_previo_boton = millis();
+        //power_saving = 0; //desactivamos power saving
+    }
+}
 void setup()
 {
     /*Iniciamos monitor serie*/
@@ -395,29 +379,20 @@ void setup()
 
     /*I2C Inicializacion*/
     Wire.begin(I2C_SDA, I2C_SCL);
-    delay(100);//500
+    delay(500);
 
-    /*Pines RGB*/
-    //pinMode(PIN_RED, OUTPUT);
-    //pinMode(PIN_GREEN, OUTPUT);
-    //pinMode(PIN_BLUE, OUTPUT);
+
     /*Pines botones*/
     // HIGH interruptor abierto - LOW interruptor cerrado.
-    pinMode(BUTTON_1, INPUT_PULLUP);  //Boton interno
+    pinMode(SWITCH_PCB, INPUT_PULLUP);  //Boton interno
     pinMode(BOT_CH, INPUT_PULLUP);//Boton cambio menu
     pinMode(BOT_UP, INPUT_PULLUP);//Botion cambio opcion
-    pinMode(LED_PIN_1, OUTPUT);  //LED interno
+    pinMode(BOT_RS, INPUT_PULLUP);//Botion cambio opcion
+    pinMode(LED_PIN, OUTPUT);  //LED interno
 
 
-    /*Conectamos a WIFI*/
+    /*Habilitamos la WIFI*/
     WiFi.mode(WIFI_STA);
-    // WiFi.begin(ssid, password);
-    // if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    //   Serial.printf("WiFi Failed!\n");
-    //   //return;
-    // }
-    // Serial.print("IP: ");
-    // Serial.println(WiFi.localIP());
 
     /*******************Init ESP-NOW***********************/
     if (esp_now_init() != ESP_OK) {
@@ -441,8 +416,9 @@ void setup()
     /*******************FIN Init ESP-NOW********************/
 
     /*Inicializamos interrupciones*/
-    attachInterrupt(BUTTON_1, ISR_button1, FALLING);  //Boton para resetear el tiempo
-    //attachInterrupt(BOT_CH, ISR_BOT_CH, FALLING);//Boton para cambio de funcion
+    attachInterrupt(SWITCH_PCB, ISR_button1, FALLING);  //Boton para resetear el tiempo
+    attachInterrupt(BOT_CH, ISR_BOT_CH, FALLING);//Boton para cambio de funcion
+    attachInterrupt(BOT_RS, ISR_BOT_RS, FALLING);//Boton para cambio de funcion
     //attachInterrupt(BOT_CH, ISR_BOT_CH_RS, RISING);//Interrupcion para detectar la caida del boton, y pausar el timer
     attachInterrupt(BOT_UP, ISR_BOT_UP, FALLING);////Boton para resetear el tiempo / cambio de opcion
     //Serial.print(bootCount);
@@ -464,10 +440,16 @@ void setup()
         oled.setCursor(0, 0);         // set position to display
         oled.println(" Marcador ");   // set text
         oled.setCursor(0, 17);        // set position to display
-        oled.println(" v0.1 SL");       // set text
+        oled.println(" v0.2 SL");       // set text
         oled.display();               // display on OLED
         delay(1000); 
      //   }
+
+    sleepDisplay(&oled);
+    delay(2500);
+    wakeDisplay(&oled);
+    delay(500);
+
     /*********************FIN Inicializamos OLED*****************/
     /* DEBUGGER */
     frecuencia = getCpuFrequencyMhz();  // In MHz
